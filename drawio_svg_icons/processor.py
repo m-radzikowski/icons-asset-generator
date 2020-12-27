@@ -5,6 +5,7 @@ import re
 import shutil
 import sys
 import xml.etree.cElementTree as ET
+from argparse import Namespace, ArgumentParser
 from itertools import filterfalse, groupby
 from typing import List, Dict
 
@@ -12,29 +13,24 @@ from drawio_svg_icons.encoding import deflate_raw, text_to_base64
 
 
 def main():
-    path = './AWS-Architecture-Assets-For-Light-and-Dark-BG_20200911/AWS-Architecture-Service-Icons_20200911'
-    filename_includes = ['_48']
-    filename_excludes = []
-    image_name_remove = ['.', '_', '-', 'Arch', '48']
-    library_name_remove = ['.', '_', '-']
+    args = parse_arguments()
+
     size = 50
-    output_dir = 'library'
-    single_library = True
 
-    create_output_dir(output_dir)
+    create_output_dir(args.output_dir)
 
-    images = list_images(path, filename_includes, filename_excludes)
+    images = list_images(args.svg_dir, args.filename_includes, args.filename_excludes)
 
     if not images:
         print('No SVG images found', file=sys.stderr)
         exit(1)
 
-    if single_library:
+    if args.single_library:
         grouped_images = {
-            path.split('/')[-1]: images
+            args.svg_dir.split('/')[-1]: images
         }
     else:
-        grouped_images = group_images_by_dir(path, images)
+        grouped_images = group_images_by_dir(args.svg_dir, images)
 
     total_count = 0
 
@@ -53,17 +49,37 @@ def main():
                 'xml': deflated,
                 'w': size,
                 'h': size,
-                'title': create_name(os.path.splitext(os.path.basename(image))[0], image_name_remove),
+                'title': create_name(os.path.splitext(os.path.basename(image))[0], args.image_name_remove),
                 'aspect': 'fixed',
             })
 
         library_json = json.dumps(library)
         library_xml = create_library_xml(library_json)
 
-        with open(os.path.join(output_dir, create_name(group_name, library_name_remove) + '.xml'), 'w') as file:
+        library_file = os.path.join(args.output_dir, create_name(group_name, args.library_name_remove) + '.xml')
+        with open(library_file, 'w') as file:
             file.write(library_xml)
 
     print(f'Created {len(grouped_images)} library files with {total_count} elements')
+
+
+def parse_arguments() -> Namespace:
+    parser = ArgumentParser(description='Convert SVG files into diagrams.net library')
+    parser.add_argument('--svg-dir', default='./svg', help='svg files directory path (default: ./svg)')
+    parser.add_argument('--output-dir', default='./library',
+                        help='path to the output directory (default: ./library)')
+    parser.add_argument('--filename-includes', default=[], action='extend', nargs='*',
+                        help='strings to filter image file name by, taking only those which contains them all')
+    parser.add_argument('--filename-excludes', default=[], action='extend', nargs='*',
+                        help='strings to filter image file name by, taking only those which do not contain any of them')
+    parser.add_argument('--image-name-remove', default=['.', '-', '_'], action='extend', nargs='*',
+                        help='strings to be removed and replaced by spaces from image file name (default: . - _)')
+    parser.add_argument('--library-name-remove', default=['.', '-', '_'], action='extend', nargs='*',
+                        help='strings to be removed and replaced by spaces from library file name (default: . - _)')
+    parser.add_argument('--single-library', action='store_true', dest='single_library',
+                        help='create single output library')
+
+    return parser.parse_args()
 
 
 def create_output_dir(dir_name) -> None:

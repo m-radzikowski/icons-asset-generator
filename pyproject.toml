@@ -11,7 +11,7 @@ python = "^3.8"
 [tool.poetry.dev-dependencies]
 
 [tool.poetry.scripts]
-drawio-svg-icons = "drawio_svg_icons.__main__:main"
+drawio-svg-icons = "drawio_svg_icons.processor:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
