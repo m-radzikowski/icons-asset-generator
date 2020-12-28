@@ -8,8 +8,11 @@ import xml.etree.cElementTree as ET
 from argparse import Namespace, ArgumentParser
 from itertools import filterfalse, groupby
 from typing import List, Dict
+from urllib.parse import urljoin, quote
 
 from drawio_svg_icons.encoding import deflate_raw, text_to_base64
+
+diagrams_net_base_url = 'https://app.diagrams.net/?clibs='
 
 
 def main():
@@ -30,11 +33,12 @@ def main():
     else:
         grouped_images = group_images_by_dir(args.svg_dir, images)
 
-    total_count = 0
+    libraries = []
+    total_images_count = 0
 
     for group_name, group_images in grouped_images.items():
         print(f'Processing {len(group_images)} images from group "{group_name}"')
-        total_count += len(group_images)
+        total_images_count += len(group_images)
 
         library = []
         for image in group_images:
@@ -54,11 +58,28 @@ def main():
         library_json = json.dumps(library)
         library_xml = create_library_xml(library_json)
 
-        library_file = os.path.join(args.output_dir, create_name(group_name, args.library_name_remove) + '.xml')
+        library_file_name = create_name(group_name, args.library_name_remove) + '.xml'
+        library_file = os.path.join(args.output_dir, library_file_name)
         with open(library_file, 'w') as file:
             file.write(library_xml)
+        libraries.append(library_file_name)
 
-    print(f'Created {len(grouped_images)} library files with {total_count} elements')
+    if args.base_url:
+        data = ''
+        library_urls = ['U' + urljoin(args.base_url, quote(lib)) for lib in libraries]
+
+        if len(library_urls) > 1:
+            all_url = diagrams_net_base_url + ';'.join(library_urls)
+            data += f'All:\n{all_url}\n\n'
+
+        for i in range(len(libraries)):
+            data += os.path.basename(libraries[i]) + ':\n'
+            data += diagrams_net_base_url + library_urls[i] + '\n\n'
+
+        with open(os.path.join(args.output_dir, 'links.txt'), 'w') as file:
+            file.write(data)
+
+    print(f'Created {len(grouped_images)} library files with {total_images_count} elements')
 
 
 def parse_arguments() -> Namespace:
@@ -83,6 +104,7 @@ def parse_arguments() -> Namespace:
                              f'(default: {default_name_remove_help})')
     parser.add_argument('--single-library', action='store_true', dest='single_library',
                         help='create single output library')
+    parser.add_argument('--base-url', help='base URL to generate link(s) to open libraries in diagrams.net')
 
     args = parser.parse_args()
 
