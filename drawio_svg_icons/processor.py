@@ -15,8 +15,6 @@ from drawio_svg_icons.encoding import deflate_raw, text_to_base64
 def main():
     args = parse_arguments()
 
-    size = 50
-
     create_output_dir(args.output_dir)
 
     images = list_images(args.svg_dir, args.filename_includes, args.filename_excludes)
@@ -43,12 +41,12 @@ def main():
             with open(image) as file:
                 svg = file.read()
             svg_base64 = text_to_base64(svg)
-            xml = create_model_xml(svg_base64, size)
+            xml = create_model_xml(svg_base64, args.size)
             deflated = deflate_raw(xml)
             library.append({
                 'xml': deflated,
-                'w': size,
-                'h': size,
+                'w': args.size,
+                'h': args.size,
                 'title': create_name(os.path.splitext(os.path.basename(image))[0], args.image_name_remove),
                 'aspect': 'fixed',
             })
@@ -64,22 +62,34 @@ def main():
 
 
 def parse_arguments() -> Namespace:
+    default_name_remove = ['.', '-', '_']
+    default_name_remove_help = ' '.join(default_name_remove)
+
     parser = ArgumentParser(description='Convert SVG files into diagrams.net library')
     parser.add_argument('--svg-dir', default='./svg', help='svg files directory path (default: ./svg)')
     parser.add_argument('--output-dir', default='./library',
                         help='path to the output directory (default: ./library)')
+    parser.add_argument('--size', default=50, type=int,
+                        help='target size of the images in px (default: 50)')
     parser.add_argument('--filename-includes', default=[], action='extend', nargs='*',
                         help='strings to filter image file name by, taking only those which contains them all')
     parser.add_argument('--filename-excludes', default=[], action='extend', nargs='*',
                         help='strings to filter image file name by, taking only those which do not contain any of them')
-    parser.add_argument('--image-name-remove', default=['.', '-', '_'], action='extend', nargs='*',
-                        help='strings to be removed and replaced by spaces from image file name (default: . - _)')
-    parser.add_argument('--library-name-remove', default=['.', '-', '_'], action='extend', nargs='*',
-                        help='strings to be removed and replaced by spaces from library file name (default: . - _)')
+    parser.add_argument('--image-name-remove', default=[], action='extend', nargs='*',
+                        help='strings to be removed and replaced by spaces from image file name ' +
+                             f'(default: {default_name_remove_help})')
+    parser.add_argument('--library-name-remove', default=[], action='extend', nargs='*',
+                        help='strings to be removed and replaced by spaces from library file name ' +
+                             f'(default: {default_name_remove_help})')
     parser.add_argument('--single-library', action='store_true', dest='single_library',
                         help='create single output library')
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    args.image_name_remove = default_name_remove if not args.image_name_remove else args.image_name_remove
+    args.library_name_remove = default_name_remove if not args.library_name_remove else args.library_name_remove
+
+    return args
 
 
 def create_output_dir(dir_name) -> None:
@@ -121,7 +131,9 @@ def group_images_by_dir(path: str, images: List[str]) -> Dict[str, List[str]]:
 
 
 def get_group_dir(path: str, file_name: str):
-    return file_name[len(path):].split('/')[1]
+    abs_dir_path = os.path.abspath(path)
+    abs_file_path = os.path.abspath(file_name)
+    return abs_file_path[len(abs_dir_path):].split('/')[1]
 
 
 def create_model_xml(svg: str, size: int) -> str:

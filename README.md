@@ -11,14 +11,24 @@ download SVG zip file
 (example: [AWS-Architecture-Assets-For-Light-and-Dark-BG_20200911](https://d1.awsstatic.com/webteam/architecture-icons/Q32020/AWS-Architecture-Assets-For-Light-and-Dark-BG_20200911.478ff05b80f909792f7853b1a28de8e28eac67f4.zip))
 and unpack it.
 
-To create a separate library for each of the icons category:
+To create a separate library for each of the service icons category:
 
 ```bash
 poetry run drawio-svg-icons \
     --svg-dir "./AWS-Architecture-Assets-For-Light-and-Dark-BG_20200911/AWS-Architecture-Service-Icons_20200911" \
     --filename-includes _48 \
-    --image-name-remove . - _ Arch _48 \
-    --library-name-remove . - _ Arch
+    --image-name-remove Arch_ _48 . - _  \
+    --library-name-remove Arch_ . - _
+```
+
+To create a separate library for each of the resource icons category:
+
+```bash
+poetry run drawio-svg-icons \
+    --svg-dir "./AWS-Architecture-Assets-For-Light-and-Dark-BG_20200911/AWS-Architecture-Resource-Icons_20200911" \
+    --filename-includes _48_Light \
+    --image-name-remove Res_ _48_Light . - _  \
+    --library-name-remove Res_ . - _
 ```
 
 Add `--single-library` flag and remove `--library-name-remove` parameter
