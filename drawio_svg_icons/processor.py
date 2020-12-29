@@ -47,7 +47,7 @@ def main():
                 svg = file.read()
             title = create_name(os.path.splitext(os.path.basename(image))[0], args.image_name_remove)
             library.append(
-                create_image_params(svg, title, args.size, args.vertex_magnets, args.side_magnets)
+                create_image_params(svg, title, args.size, args.vertex_magnets, args.side_magnets, args.labels)
             )
 
         library_json = json.dumps(library)
@@ -103,6 +103,8 @@ def parse_arguments() -> Namespace:
                         help='don\'t create magnets on vertices (corners)')
     parser.add_argument('--side-magnets', default=5, type=int,
                         help='number of magnets for each side (default: 5)')
+    parser.add_argument('--labels', action='store_true', dest='labels',
+                        help='add label with name to images')
     parser.add_argument('--base-url', help='base URL to generate link(s) to open libraries in diagrams.net')
 
     args = parser.parse_args()
@@ -157,12 +159,12 @@ def get_group_dir(path: str, file_name: str):
     return abs_file_path[len(abs_dir_path):].split('/')[1]
 
 
-def create_image_params(svg: str, title: str, size: int, vertex_magnets: bool, side_magnets: int) -> dict:
+def create_image_params(svg: str, title: str, size: int, vertex_magnets: bool, side_magnets: int, labels: bool) -> dict:
     points = create_magnets(vertex_magnets, side_magnets)
-    print(points)
+    label = title if labels else None
 
     svg_base64 = text_to_base64(svg)
-    xml = create_model_xml(svg_base64, size, points)
+    xml = create_model_xml(svg_base64, size, points, label)
     deflated_xml = deflate_raw(xml)
 
     return {
@@ -174,14 +176,14 @@ def create_image_params(svg: str, title: str, size: int, vertex_magnets: bool, s
     }
 
 
-def create_model_xml(svg: str, size: int, points: List[Tuple[float, float]]) -> str:
+def create_model_xml(svg: str, size: int, points: List[Tuple[float, float]], label: str) -> str:
     model = ET.Element("mxGraphModel")
     root = ET.SubElement(model, "root")
 
     ET.SubElement(root, "mxCell", {'id': '0'})
     ET.SubElement(root, "mxCell", {'id': '1', 'parent': '0'})
 
-    styles = {
+    image_styles = {
         'shape': 'image',
         'verticalLabelPosition': 'bottom',
         'verticalAlign': 'top',
@@ -190,12 +192,42 @@ def create_model_xml(svg: str, size: int, points: List[Tuple[float, float]]) -> 
         'image': 'data:image/svg+xml,' + svg,
         'points': '[' + ','.join([f'[{p[0]},{p[1]}]' for p in points]) + ']',
     }
-    style = ';'.join([f'{k}={v}' for k, v in styles.items()])
+    image_cell = ET.SubElement(root, "mxCell", {
+        'id': '2',
+        'parent': '1',
+        'vertex': '1',
+        'style': styles_to_str(image_styles)
+    })
+    ET.SubElement(image_cell, "mxGeometry", {'width': str(size), 'height': str(size), 'as': 'geometry'})
 
-    cell = ET.SubElement(root, "mxCell", {'id': '2', 'parent': '1', 'vertex': '1', 'style': style})
-    ET.SubElement(cell, "mxGeometry", {'width': str(size), 'height': str(size), 'as': 'geometry'})
+    if label:
+        label_styles = {
+            'text': None,
+            'html': '1',
+            'align': 'center',
+            'verticalAlign': 'middle',
+            'resizable': '0',
+            'points': '[]',
+            'autosize': '1',
+        }
+        label_cell = ET.SubElement(root, "mxCell", {
+            'id': '3',
+            'parent': '1',
+            'vertex': '1',
+            'style': styles_to_str(label_styles),
+            'value': label,
+        })
+        ET.SubElement(label_cell, "mxGeometry",
+                      {'width': str(size), 'height': str(20), 'y': str(size), 'as': 'geometry'})
 
     return ET.tostring(model, encoding='unicode', method='xml')
+
+
+def styles_to_str(styles: Dict[str, str]) -> str:
+    params = []
+    for k, v in styles.items():
+        params.append(f'{k}={v}' if v is not None else k)
+    return ';'.join(params)
 
 
 def create_library_xml(data: str) -> str:
