@@ -7,12 +7,13 @@ import sys
 import xml.etree.cElementTree as ET
 from argparse import Namespace, ArgumentParser
 from itertools import filterfalse, groupby
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from urllib.parse import urljoin, quote
 
 from drawio_svg_icons.encoding import deflate_raw, text_to_base64
+from drawio_svg_icons.magnets import create_magnets
 
-diagrams_net_base_url = 'https://app.diagrams.net/?clibs='
+diagrams_net_base_url = 'https://app.diagrams.net/?splash=0&clibs='
 
 
 def main():
@@ -44,16 +45,10 @@ def main():
         for image in group_images:
             with open(image) as file:
                 svg = file.read()
-            svg_base64 = text_to_base64(svg)
-            xml = create_model_xml(svg_base64, args.size)
-            deflated = deflate_raw(xml)
-            library.append({
-                'xml': deflated,
-                'w': args.size,
-                'h': args.size,
-                'title': create_name(os.path.splitext(os.path.basename(image))[0], args.image_name_remove),
-                'aspect': 'fixed',
-            })
+            title = create_name(os.path.splitext(os.path.basename(image))[0], args.image_name_remove)
+            library.append(
+                create_image_params(svg, title, args.size, args.vertex_magnets, args.side_magnets)
+            )
 
         library_json = json.dumps(library)
         library_xml = create_library_xml(library_json)
@@ -104,6 +99,10 @@ def parse_arguments() -> Namespace:
                              f'(default: {default_name_remove_help})')
     parser.add_argument('--single-library', action='store_true', dest='single_library',
                         help='create single output library')
+    parser.add_argument('--no-vertex-magnets', action='store_false', dest='vertex_magnets',
+                        help='don\'t create magnets on vertices (corners)')
+    parser.add_argument('--side-magnets', default=5, type=int,
+                        help='number of magnets for each side (default: 5)')
     parser.add_argument('--base-url', help='base URL to generate link(s) to open libraries in diagrams.net')
 
     args = parser.parse_args()
@@ -158,7 +157,24 @@ def get_group_dir(path: str, file_name: str):
     return abs_file_path[len(abs_dir_path):].split('/')[1]
 
 
-def create_model_xml(svg: str, size: int) -> str:
+def create_image_params(svg: str, title: str, size: int, vertex_magnets: bool, side_magnets: int) -> dict:
+    points = create_magnets(vertex_magnets, side_magnets)
+    print(points)
+
+    svg_base64 = text_to_base64(svg)
+    xml = create_model_xml(svg_base64, size, points)
+    deflated_xml = deflate_raw(xml)
+
+    return {
+        'xml': deflated_xml,
+        'w': size,
+        'h': size,
+        'title': title,
+        'aspect': 'fixed',
+    }
+
+
+def create_model_xml(svg: str, size: int, points: List[Tuple[float, float]]) -> str:
     model = ET.Element("mxGraphModel")
     root = ET.SubElement(model, "root")
 
@@ -172,6 +188,7 @@ def create_model_xml(svg: str, size: int) -> str:
         'imageAspect': '0',
         'aspect': 'fixed',
         'image': 'data:image/svg+xml,' + svg,
+        'points': '[' + ','.join([f'[{p[0]},{p[1]}]' for p in points]) + ']',
     }
     style = ';'.join([f'{k}={v}' for k, v in styles.items()])
 
