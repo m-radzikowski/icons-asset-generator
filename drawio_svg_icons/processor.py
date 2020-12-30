@@ -3,15 +3,18 @@ import json
 import os
 import re
 import shutil
-import sys
-import xml.etree.cElementTree as ET
+# noinspection PyPep8Naming
+import xml.etree.ElementTree as ET
 from argparse import Namespace, ArgumentParser
 from itertools import filterfalse, groupby
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin, quote
 
 from drawio_svg_icons.encoding import deflate_raw, text_to_base64
+from drawio_svg_icons.logger import get_logger
 from drawio_svg_icons.magnets import create_magnets
+
+logger = get_logger(__name__)
 
 diagrams_net_base_url = 'https://app.diagrams.net/?splash=0&clibs='
 
@@ -24,7 +27,7 @@ def main():
     images = list_images(args.svg_dir, args.filename_includes, args.filename_excludes)
 
     if not images:
-        print('No SVG images found', file=sys.stderr)
+        logger.error('No SVG images found')
         exit(1)
 
     if args.single_library:
@@ -38,7 +41,7 @@ def main():
     total_images_count = 0
 
     for group_name, group_images in grouped_images.items():
-        print(f'Processing {len(group_images)} images from group "{group_name}"')
+        logger.info(f'Processing {len(group_images)} images from group "{group_name}"')
         total_images_count += len(group_images)
 
         library = []
@@ -47,7 +50,7 @@ def main():
                 svg = file.read()
             title = create_name(os.path.splitext(os.path.basename(image))[0], args.image_name_remove)
             library.append(
-                create_image_params(svg, title, args.size, args.vertex_magnets, args.side_magnets, args.labels)
+                create_image_params(svg, title, args.vertex_magnets, args.side_magnets, args.labels)
             )
 
         library_json = json.dumps(library)
@@ -74,7 +77,7 @@ def main():
         with open(os.path.join(args.output_dir, 'links.txt'), 'w') as file:
             file.write(data)
 
-    print(f'Created {len(grouped_images)} library files with {total_images_count} elements')
+    logger.info(f'Created {len(grouped_images)} library files with {total_images_count} elements')
 
 
 def parse_arguments() -> Namespace:
@@ -85,8 +88,6 @@ def parse_arguments() -> Namespace:
     parser.add_argument('--svg-dir', default='./svg', help='svg files directory path (default: ./svg)')
     parser.add_argument('--output-dir', default='./library',
                         help='path to the output directory (default: ./library)')
-    parser.add_argument('--size', default=50, type=int,
-                        help='target size of the images in px (default: 50)')
     parser.add_argument('--filename-includes', default=[], action='extend', nargs='*',
                         help='strings to filter image file name by, taking only those which contains them all')
     parser.add_argument('--filename-excludes', default=[], action='extend', nargs='*',
@@ -159,9 +160,10 @@ def get_group_dir(path: str, file_name: str):
     return abs_file_path[len(abs_dir_path):].split('/')[1]
 
 
-def create_image_params(svg: str, title: str, size: int, vertex_magnets: bool, side_magnets: int, labels: bool) -> dict:
+def create_image_params(svg: str, title: str, vertex_magnets: bool, side_magnets: int, labels: bool) -> dict:
     points = create_magnets(vertex_magnets, side_magnets)
     label = title if labels else None
+    size = get_size(svg)
 
     svg_base64 = text_to_base64(svg)
     xml = create_model_xml(svg_base64, size, points, label)
@@ -169,14 +171,44 @@ def create_image_params(svg: str, title: str, size: int, vertex_magnets: bool, s
 
     return {
         'xml': deflated_xml,
-        'w': size,
-        'h': size,
+        'w': size[0],
+        'h': size[1],
         'title': title,
         'aspect': 'fixed',
     }
 
 
-def create_model_xml(svg: str, size: int, points: List[Tuple[float, float]], label: str) -> str:
+def get_size(svg: str) -> (float, float):
+    def parse_units(val: str) -> Optional[float]:
+        if val is None:
+            return None
+
+        if val and val.endswith('px'):
+            val = val[:-2]
+
+        try:
+            return float(val)
+        except ValueError:
+            logger.warning(f'Not supported size unit in value: {val}')
+            return None
+
+    root = ET.fromstring(svg)
+
+    width = parse_units(root.get('width'))
+    height = parse_units(root.get('height'))
+
+    if not width or not height:
+        viewbox = root.get('viewBox')
+        if not viewbox:
+            raise Exception('No width and height or viewBox defined')
+        box = viewbox.split(' ')
+        width = float(box[2]) - float(box[0])
+        height = float(box[3]) - float(box[1])
+
+    return width, height
+
+
+def create_model_xml(svg: str, size: Tuple[float, float], points: List[Tuple[float, float]], label: str) -> str:
     model = ET.Element("mxGraphModel")
     root = ET.SubElement(model, "root")
 
@@ -198,7 +230,7 @@ def create_model_xml(svg: str, size: int, points: List[Tuple[float, float]], lab
         'vertex': '1',
         'style': styles_to_str(image_styles)
     })
-    ET.SubElement(image_cell, "mxGeometry", {'width': str(size), 'height': str(size), 'as': 'geometry'})
+    ET.SubElement(image_cell, "mxGeometry", {'width': str(size[0]), 'height': str(size[1]), 'as': 'geometry'})
 
     if label:
         label_styles = {
