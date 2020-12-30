@@ -184,7 +184,12 @@ def group_images_by_dir(path: str, images: List[str]) -> Dict[str, List[str]]:
 def get_group_dir(path: str, file_name: str):
     abs_dir_path = os.path.abspath(path)
     abs_file_path = os.path.abspath(file_name)
-    return abs_file_path[len(abs_dir_path):].split('/')[1]
+    rel_file_path = abs_file_path[len(abs_dir_path) + 1:]
+
+    if rel_file_path.find('/') == -1:  # file in root-level SVG dir
+        return abs_dir_path.split('/')[-1]
+    else:
+        return rel_file_path.split('/')[0]
 
 
 def create_image_params(svg: str, title: str, vertex_magnets: bool, side_magnets: int, labels: bool,
