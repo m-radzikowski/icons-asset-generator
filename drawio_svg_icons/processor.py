@@ -5,9 +5,9 @@ import re
 import shutil
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
-from argparse import Namespace, ArgumentParser
+from argparse import ArgumentParser
 from itertools import filterfalse, groupby
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
 from urllib.parse import urljoin, quote
 
 from drawio_svg_icons.encoding import deflate_raw, text_to_base64
@@ -22,20 +22,20 @@ diagrams_net_base_url = 'https://app.diagrams.net/?splash=0&clibs='
 def main():
     args = parse_arguments()
 
-    create_output_dir(args.output_dir)
+    create_output_dir(args['output_dir'])
 
-    images = list_images(args.svg_dir, args.filename_includes, args.filename_excludes)
+    images = list_images(args['svg_dir'], args['filename_includes'], args['filename_excludes'])
 
     if not images:
         logger.error('No SVG images found')
         exit(1)
 
-    if args.single_library:
+    if args['single_library']:
         grouped_images = {
-            args.svg_dir.split('/')[-1]: images
+            args['svg_dir'].split('/')[-1]: images
         }
     else:
-        grouped_images = group_images_by_dir(args.svg_dir, images)
+        grouped_images = group_images_by_dir(args['svg_dir'], images)
 
     libraries = []
     total_images_count = 0
@@ -48,23 +48,24 @@ def main():
         for image in group_images:
             with open(image) as file:
                 svg = file.read()
-            title = create_name(os.path.splitext(os.path.basename(image))[0], args.image_name_remove)
+            title = create_name(os.path.splitext(os.path.basename(image))[0], args['image_name_remove'])
             library.append(
-                create_image_params(svg, title, args.vertex_magnets, args.side_magnets, args.labels)
+                create_image_params(svg, title, args['vertex_magnets'], args['side_magnets'], args['labels'],
+                                    args['size'])
             )
 
         library_json = json.dumps(library)
         library_xml = create_library_xml(library_json)
 
-        library_file_name = create_name(group_name, args.library_name_remove) + '.xml'
-        library_file = os.path.join(args.output_dir, library_file_name)
+        library_file_name = create_name(group_name, args['library_name_remove']) + '.xml'
+        library_file = os.path.join(args['output_dir'], library_file_name)
         with open(library_file, 'w') as file:
             file.write(library_xml)
         libraries.append(library_file_name)
 
-    if args.base_url:
+    if args['base_url']:
         data = ''
-        library_urls = ['U' + urljoin(args.base_url, quote(lib)) for lib in libraries]
+        library_urls = ['U' + urljoin(args['base_url'], quote(lib)) for lib in libraries]
 
         if len(library_urls) > 1:
             all_url = diagrams_net_base_url + ';'.join(library_urls)
@@ -74,44 +75,70 @@ def main():
             data += os.path.basename(libraries[i]) + ':\n'
             data += diagrams_net_base_url + library_urls[i] + '\n\n'
 
-        with open(os.path.join(args.output_dir, 'links.txt'), 'w') as file:
+        with open(os.path.join(args['output_dir'], 'links.txt'), 'w') as file:
             file.write(data)
 
     logger.info(f'Created {len(grouped_images)} library files with {total_images_count} elements')
 
 
-def parse_arguments() -> Namespace:
+def parse_arguments() -> Dict[str, Any]:
     default_name_remove = ['.', '-', '_']
     default_name_remove_help = ' '.join(default_name_remove)
+    allowed_size_types = ['width', 'height', 'longest']
 
     parser = ArgumentParser(description='Convert SVG files into diagrams.net library')
-    parser.add_argument('--svg-dir', default='./svg', help='svg files directory path (default: ./svg)')
-    parser.add_argument('--output-dir', default='./library',
+    parser.add_argument('--svg-dir', metavar='PATH', default='./svg', help='svg files directory path (default: ./svg)')
+    parser.add_argument('--output-dir', metavar='PATH', default='./library',
                         help='path to the output directory (default: ./library)')
-    parser.add_argument('--filename-includes', default=[], action='extend', nargs='*',
+    parser.add_argument('--size', metavar='TYPE=VALUE', type=str,
+                        help='resize images to target size; allowed TYPE values: ' + ', '.join(allowed_size_types))
+    parser.add_argument('--filename-includes', metavar='VALUE', default=[], action='extend', nargs='+',
                         help='strings to filter image file name by, taking only those which contains them all')
-    parser.add_argument('--filename-excludes', default=[], action='extend', nargs='*',
+    parser.add_argument('--filename-excludes', metavar='VALUE', default=[], action='extend', nargs='+',
                         help='strings to filter image file name by, taking only those which do not contain any of them')
-    parser.add_argument('--image-name-remove', default=[], action='extend', nargs='*',
+    parser.add_argument('--image-name-remove', metavar='VALUE', default=[], action='extend', nargs='+',
                         help='strings to be removed and replaced by spaces from image file name ' +
                              f'(default: {default_name_remove_help})')
-    parser.add_argument('--library-name-remove', default=[], action='extend', nargs='*',
+    parser.add_argument('--library-name-remove', metavar='VALUE', default=[], action='extend', nargs='+',
                         help='strings to be removed and replaced by spaces from library file name ' +
                              f'(default: {default_name_remove_help})')
     parser.add_argument('--single-library', action='store_true', dest='single_library',
                         help='create single output library')
     parser.add_argument('--no-vertex-magnets', action='store_false', dest='vertex_magnets',
                         help='don\'t create magnets on vertices (corners)')
-    parser.add_argument('--side-magnets', default=5, type=int,
+    parser.add_argument('--side-magnets', metavar='COUNT', default=5, type=int,
                         help='number of magnets for each side (default: 5)')
     parser.add_argument('--labels', action='store_true', dest='labels',
                         help='add label with name to images')
-    parser.add_argument('--base-url', help='base URL to generate link(s) to open libraries in diagrams.net')
+    parser.add_argument('--base-url', metavar='URL',
+                        help='base URL to generate link(s) to open libraries in diagrams.net')
 
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
-    args.image_name_remove = default_name_remove if not args.image_name_remove else args.image_name_remove
-    args.library_name_remove = default_name_remove if not args.library_name_remove else args.library_name_remove
+    if args['size']:
+        if args['size'].find('=') == -1:
+            parser.print_usage()
+            logger.error('Size must be in format TYPE=VALUE')
+            exit(1)
+
+        [size_type, size_value] = args['size'].split('=')
+        if size_type not in allowed_size_types:
+            parser.print_usage()
+            logger.error('Size type must be one of: ' + ', '.join(allowed_size_types))
+            exit(1)
+
+        try:
+            size_value = int(size_value)
+        except ValueError:
+            parser.print_usage()
+            logger.error('Size value must be an integer value')
+            exit(1)
+
+        args['size'] = (size_type, size_value)
+
+    args['image_name_remove'] = default_name_remove if not args['image_name_remove'] else args['image_name_remove']
+    args['library_name_remove'] = default_name_remove if not args['library_name_remove'] \
+        else args['library_name_remove']
 
     return args
 
@@ -160,10 +187,14 @@ def get_group_dir(path: str, file_name: str):
     return abs_file_path[len(abs_dir_path):].split('/')[1]
 
 
-def create_image_params(svg: str, title: str, vertex_magnets: bool, side_magnets: int, labels: bool) -> dict:
+def create_image_params(svg: str, title: str, vertex_magnets: bool, side_magnets: int, labels: bool,
+                        resize: (str, int)) -> dict:
     points = create_magnets(vertex_magnets, side_magnets)
     label = title if labels else None
     size = get_size(svg)
+
+    if resize:
+        size = calc_new_size(size, resize)
 
     svg_base64 = text_to_base64(svg)
     xml = create_model_xml(svg_base64, size, points, label)
@@ -200,12 +231,31 @@ def get_size(svg: str) -> (float, float):
     if not width or not height:
         viewbox = root.get('viewBox')
         if not viewbox:
-            raise Exception('No width and height or viewBox defined')
-        box = viewbox.split(' ')
-        width = float(box[2]) - float(box[0])
-        height = float(box[3]) - float(box[1])
+            raise Exception('No width and height or viewBox defined in SVG')
+        (box_x, box_y, box_width, box_height) = viewbox.split(' ')
+        width = float(box_width) - float(box_x)
+        height = float(box_height) - float(box_y)
 
     return width, height
+
+
+def calc_new_size(size: (float, float), resize: (str, int)) -> (float, float):
+    (width, height) = size
+    (resize_type, resize_value) = resize
+
+    if resize_type == 'longest':
+        resize_type = 'width' if width > height else 'height'
+
+    aspect_ratio = width / height
+
+    if resize_type == 'width':
+        new_width = resize_value
+        new_height = new_width / aspect_ratio
+    else:
+        new_height = resize_value
+        new_width = new_height * aspect_ratio
+
+    return new_width, new_height
 
 
 def create_model_xml(svg: str, size: Tuple[float, float], points: List[Tuple[float, float]], label: str) -> str:
