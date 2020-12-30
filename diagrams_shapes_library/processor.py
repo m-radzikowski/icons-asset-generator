@@ -10,9 +10,9 @@ from itertools import filterfalse, groupby
 from typing import List, Dict, Tuple, Optional, Any
 from urllib.parse import urljoin, quote
 
-from drawio_svg_icons.encoding import deflate_raw, text_to_base64
-from drawio_svg_icons.logger import get_logger
-from drawio_svg_icons.magnets import create_magnets
+from diagrams_shapes_library.encoding import deflate_raw, text_to_base64
+from diagrams_shapes_library.logger import get_logger
+from diagrams_shapes_library.magnets import create_magnets
 
 logger = get_logger(__name__)
 
@@ -86,7 +86,7 @@ def parse_arguments() -> Dict[str, Any]:
     default_name_remove_help = ' '.join(default_name_remove)
     allowed_size_types = ['width', 'height', 'longest']
 
-    parser = ArgumentParser(description='Convert SVG files into diagrams.net library')
+    parser = ArgumentParser(description='Create diagrams.net shape libraries from SVG images.')
     parser.add_argument('--svg-dir', metavar='PATH', default='./svg', help='svg files directory path (default: ./svg)')
     parser.add_argument('--output-dir', metavar='PATH', default='./library',
                         help='path to the output directory (default: ./library)')
@@ -105,9 +105,9 @@ def parse_arguments() -> Dict[str, Any]:
     parser.add_argument('--single-library', action='store_true', dest='single_library',
                         help='create single output library')
     parser.add_argument('--no-vertex-magnets', action='store_false', dest='vertex_magnets',
-                        help='don\'t create magnets on vertices (corners)')
+                        help='don\'t create connection points on vertices (corners)')
     parser.add_argument('--side-magnets', metavar='COUNT', default=5, type=int,
-                        help='number of magnets for each side (default: 5)')
+                        help='number of connection points for each side (default: 5)')
     parser.add_argument('--labels', action='store_true', dest='labels',
                         help='add label with name to images')
     parser.add_argument('--base-url', metavar='URL',
