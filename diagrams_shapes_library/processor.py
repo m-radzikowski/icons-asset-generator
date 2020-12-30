@@ -6,7 +6,8 @@ import shutil
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
-from itertools import filterfalse, groupby
+from collections import defaultdict
+from itertools import filterfalse
 from typing import List, Dict, Tuple, Optional, Any
 from urllib.parse import urljoin, quote
 
@@ -31,21 +32,20 @@ def main():
         exit(1)
 
     if args['single_library']:
-        grouped_images = {
+        libraries = {
             args['svg_dir'].split('/')[-1]: images
         }
     else:
-        grouped_images = group_images_by_dir(args['svg_dir'], images)
+        libraries = group_images(args['svg_dir'], images, args['library_name_remove'])
 
-    libraries = []
     total_images_count = 0
 
-    for group_name, group_images in grouped_images.items():
-        logger.info(f'Processing {len(group_images)} images from group "{group_name}"')
-        total_images_count += len(group_images)
+    for library_name, library_images in libraries.items():
+        logger.info(f'Processing {len(library_images)} images from group "{library_name}"')
+        total_images_count += len(library_images)
 
         library = []
-        for image in group_images:
+        for image in library_images:
             with open(image) as file:
                 svg = file.read()
             title = create_name(os.path.splitext(os.path.basename(image))[0], args['image_name_remove'])
@@ -57,28 +57,28 @@ def main():
         library_json = json.dumps(library)
         library_xml = create_library_xml(library_json)
 
-        library_file_name = create_name(group_name, args['library_name_remove']) + '.xml'
-        library_file = os.path.join(args['output_dir'], library_file_name)
+        library_file = os.path.join(args['output_dir'], library_name + '.xml')
         with open(library_file, 'w') as file:
             file.write(library_xml)
-        libraries.append(library_file_name)
 
     if args['base_url']:
         data = ''
-        library_urls = ['U' + urljoin(args['base_url'], quote(lib)) for lib in libraries]
+        library_names = list(libraries.keys())
+        library_names.sort()
+        library_urls = ['U' + urljoin(args['base_url'], quote(lib + '.xml')) for lib in library_names]
 
         if len(library_urls) > 1:
             all_url = diagrams_net_base_url + ';'.join(library_urls)
             data += f'All:\n{all_url}\n\n'
 
-        for i in range(len(libraries)):
-            data += os.path.basename(libraries[i]) + ':\n'
+        for i in range(len(library_names)):
+            data += library_names[i] + ':\n'
             data += diagrams_net_base_url + library_urls[i] + '\n\n'
 
         with open(os.path.join(args['output_dir'], 'links.txt'), 'w') as file:
             file.write(data)
 
-    logger.info(f'Created {len(grouped_images)} library files with {total_images_count} elements')
+    logger.info(f'Created {len(libraries)} library files with {total_images_count} elements')
 
 
 def parse_arguments() -> Dict[str, Any]:
@@ -177,19 +177,29 @@ def filter_file_name_exclude(files: List[str], keywords: List[str]) -> List[str]
     )
 
 
-def group_images_by_dir(path: str, images: List[str]) -> Dict[str, List[str]]:
-    return {key: list(items) for key, items in groupby(images, lambda file_name: get_group_dir(path, file_name))}
+def group_images(base_path: str, images: List[str], group_name_remove: List[str]) -> Dict[str, List[str]]:
+    groups = defaultdict(list)
+
+    for image in images:
+        group_name = get_group_name(base_path, image, group_name_remove)
+        groups[group_name].append(image)
+
+    return groups
 
 
-def get_group_dir(path: str, file_name: str):
-    abs_dir_path = os.path.abspath(path)
+def get_group_name(base_path: str, file_name: str, group_name_remove: List[str]) -> str:
+    abs_base_path = os.path.abspath(base_path)
     abs_file_path = os.path.abspath(file_name)
-    rel_file_path = abs_file_path[len(abs_dir_path) + 1:]
+    rel_file_path = abs_file_path[len(abs_base_path) + 1:]
 
     if rel_file_path.find('/') == -1:  # file in root-level SVG dir
-        return abs_dir_path.split('/')[-1]
+        group_name = abs_base_path.split('/')[-1]
     else:
-        return rel_file_path.split('/')[0]
+        group_name = rel_file_path.split('/')[0]
+
+    name = create_name(group_name, group_name_remove)
+
+    return name
 
 
 def create_image_params(svg: str, title: str, vertex_magnets: bool, side_magnets: int, labels: bool,
