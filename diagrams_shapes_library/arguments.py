@@ -1,0 +1,34 @@
+from argparse import ArgumentParser
+from typing import List
+
+default_name_remove = ['.', '-', '_']
+allowed_size_types = ['width', 'height', 'longest']
+
+
+def create_arg_parser(processors: List) -> ArgumentParser:
+    default_name_remove_help = ' '.join(default_name_remove)
+
+    parser = ArgumentParser(description='Convert images into application libraries.')
+    parser.add_argument('--path', metavar='PATH', help='input files directory path', required=True)
+    parser.add_argument('--output', metavar='PATH', default='./library',
+                        help='output directory path (default: ./library)')
+    parser.add_argument('--size', metavar='TYPE=VALUE', type=str,
+                        help='resize images to target size; allowed TYPE values: ' + ', '.join(allowed_size_types))
+    parser.add_argument('--filename-includes', metavar='VALUE', default=[], action='extend', nargs='+',
+                        help='strings to filter image file name by, taking only those which contains them all')
+    parser.add_argument('--filename-excludes', metavar='VALUE', default=[], action='extend', nargs='+',
+                        help='strings to filter image file name by, taking only those which do not contain any of them')
+    parser.add_argument('--image-name-remove', metavar='VALUE', default=[], action='extend', nargs='+',
+                        help='strings to be removed from image file name ' +
+                             f'(default: {default_name_remove_help})')
+    parser.add_argument('--library-name-remove', metavar='VALUE', default=[], action='extend', nargs='+',
+                        help='strings to be removed from library file name ' +
+                             f'(default: {default_name_remove_help})')
+
+    subparsers = parser.add_subparsers(title='target format', metavar='TARGET', required=True)
+
+    for processor in processors:
+        subparser = processor.add_subcommand(subparsers)
+        subparser.set_defaults(processor=processor)
+
+    return parser

@@ -3,15 +3,14 @@ import os
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Any
 from urllib.parse import urljoin, quote
 
 from diagrams_shapes_library.common.images_finder import get_image_groups
 from diagrams_shapes_library.common.magnets import create_magnets
 from diagrams_shapes_library.common.name import create_name
 from diagrams_shapes_library.common.size import get_svg_size, calc_new_size
-from diagrams_shapes_library.general_config import GeneralConfig
-from diagrams_shapes_library.processor import Processor
+from diagrams_shapes_library.processor import Processor, ProcessorConfig
 from diagrams_shapes_library.util.encoding import text_to_base64, deflate_raw
 from diagrams_shapes_library.util.io import create_output_dir
 from diagrams_shapes_library.util.logger import get_logger
@@ -21,22 +20,19 @@ logger = get_logger(__name__)
 diagrams_net_base_url = 'https://app.diagrams.net/?splash=0&clibs='
 
 
-class DiagramsNetConfig(GeneralConfig):
+class DiagramsNetConfig(ProcessorConfig):
     single_library: bool = None
     vertex_magnets = None
     side_magnets = None
     labels = None
     base_url = None
 
-    def __init__(self, dictionary):
-        for k, v in dictionary.items():
-            setattr(self, k, v)
-
 
 class DiagramsNet(Processor):
-    conf = None
+    _conf: DiagramsNetConfig = None
 
-    def add_subcommand(self, subparsers) -> ArgumentParser:
+    @staticmethod
+    def add_subcommand(subparsers) -> ArgumentParser:
         parser: ArgumentParser = subparsers.add_parser('diagrams.net', help='Shapes library for diagrams.net')
 
         parser.add_argument('--single-library', action='store_true', dest='single_library',
@@ -52,25 +48,28 @@ class DiagramsNet(Processor):
 
         return parser
 
-    def process(self, **kwargs):
+    @staticmethod
+    def _create_config(config: Dict[str, Any]) -> DiagramsNetConfig:
+        return DiagramsNetConfig(config)
+
+    def process(self):
         logger.info('Creating Diagrams.net library')
-        self.conf = DiagramsNetConfig(kwargs)
 
-        create_output_dir(self.conf.output)
+        create_output_dir(self._conf.output)
 
-        libraries = get_image_groups(self.conf.path, self.conf.filename_includes, self.conf.filename_excludes,
-                                     self.conf.single_library, self.conf.library_name_remove)
+        libraries = get_image_groups(self._conf.path, self._conf.filename_includes, self._conf.filename_excludes,
+                                     self._conf.single_library, self._conf.library_name_remove)
 
         total_images_count = sum(len(images) for images in libraries.values())
 
         for library_name, library_images in libraries.items():
             self._process_group(library_name, library_images)
 
-        if self.conf.base_url:
+        if self._conf.base_url:
             data = ''
             library_names = list(libraries.keys())
             library_names.sort()
-            library_urls = ['U' + urljoin(self.conf.base_url, quote(lib + '.xml')) for lib in library_names]
+            library_urls = ['U' + urljoin(self._conf.base_url, quote(lib + '.xml')) for lib in library_names]
 
             if len(library_urls) > 1:
                 all_url = diagrams_net_base_url + ';'.join(library_urls)
@@ -80,7 +79,7 @@ class DiagramsNet(Processor):
                 data += library_names[i] + ':\n'
                 data += diagrams_net_base_url + library_urls[i] + '\n\n'
 
-            with open(os.path.join(self.conf.output, 'links.txt'), 'w') as file:
+            with open(os.path.join(self._conf.output, 'links.txt'), 'w') as file:
                 file.write(data)
 
         logger.info(f'Created {len(libraries)} library files with {total_images_count} elements')
@@ -92,7 +91,7 @@ class DiagramsNet(Processor):
         for image in library_images:
             with open(image) as file:
                 svg = file.read()
-            title = create_name(os.path.splitext(os.path.basename(image))[0], self.conf.image_name_remove)
+            title = create_name(os.path.splitext(os.path.basename(image))[0], self._conf.image_name_remove)
             library.append(
                 self._create_image_params(svg, title)
             )
@@ -100,17 +99,17 @@ class DiagramsNet(Processor):
         library_json = json.dumps(library)
         library_xml = self._create_library_xml(library_json)
 
-        library_file = os.path.join(self.conf.output, library_name + '.xml')
+        library_file = os.path.join(self._conf.output, library_name + '.xml')
         with open(library_file, 'w') as file:
             file.write(library_xml)
 
     def _create_image_params(self, svg: str, title: str) -> dict:
-        points = create_magnets(self.conf.vertex_magnets, self.conf.side_magnets)
-        label = title if self.conf.labels else None
+        points = create_magnets(self._conf.vertex_magnets, self._conf.side_magnets)
+        label = title if self._conf.labels else None
         size = get_svg_size(svg)
 
-        if self.conf.size:
-            size = calc_new_size(size, self.conf.size)
+        if self._conf.size:
+            size = calc_new_size(size, self._conf.size)
 
         svg_base64 = text_to_base64(svg)
         xml = self._create_model_xml(svg_base64, size, points, label)
@@ -171,13 +170,15 @@ class DiagramsNet(Processor):
 
         return ET.tostring(model, encoding='unicode', method='xml')
 
-    def _styles_to_str(self, styles: Dict[str, str]) -> str:
+    @staticmethod
+    def _styles_to_str(styles: Dict[str, str]) -> str:
         params = []
         for k, v in styles.items():
             params.append(f'{k}={v}' if v is not None else k)
         return ';'.join(params)
 
-    def _create_library_xml(self, data: str) -> str:
+    @staticmethod
+    def _create_library_xml(data: str) -> str:
         library = ET.Element("mxlibrary")
         library.text = data
         return ET.tostring(library, encoding='unicode', method='xml')
