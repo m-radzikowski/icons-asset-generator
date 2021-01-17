@@ -66,21 +66,7 @@ class DiagramsNet(Processor):
             self._process_group(library_name, library_images)
 
         if self._conf.base_url:
-            data = ''
-            library_names = list(libraries.keys())
-            library_names.sort()
-            library_urls = ['U' + urljoin(self._conf.base_url, quote(lib + '.xml')) for lib in library_names]
-
-            if len(library_urls) > 1:
-                all_url = diagrams_net_base_url + ';'.join(library_urls)
-                data += f'All:\n{all_url}\n\n'
-
-            for i in range(len(library_names)):
-                data += library_names[i] + ':\n'
-                data += diagrams_net_base_url + library_urls[i] + '\n\n'
-
-            with open(os.path.join(self._conf.output, 'links.txt'), 'w') as file:
-                file.write(data)
+            self._generate_links(libraries)
 
         logger.info(f'Created {len(libraries)} library files with {total_images_count} elements')
 
@@ -182,3 +168,20 @@ class DiagramsNet(Processor):
         library = ET.Element("mxlibrary")
         library.text = data
         return ET.tostring(library, encoding='unicode', method='xml')
+
+    def _generate_links(self, libraries):
+        data = ''
+        library_names = list(libraries.keys())
+        library_names.sort()
+        library_urls = ['U' + urljoin(self._conf.base_url, quote(lib + '.xml')) for lib in library_names]
+
+        if len(library_urls) > 1:
+            all_url = diagrams_net_base_url + ';'.join(library_urls)
+            data += f'All:\n{all_url}\n\n'
+
+        for i in range(len(library_names)):
+            data += library_names[i] + ':\n'
+            data += diagrams_net_base_url + library_urls[i] + '\n\n'
+
+        with open(os.path.join(self._conf.output, 'links.txt'), 'w') as file:
+            file.write(data)
