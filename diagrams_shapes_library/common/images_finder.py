@@ -11,22 +11,14 @@ logger = get_logger(__name__)
 
 
 def get_image_groups(path: str, filename_includes: List[str], filename_excludes: List[str],
-                     single_group: bool, group_name_remove: List[str],
+                     group_name_remove: List[str],
                      image_extension='svg') -> Dict[str, List[str]]:
     images = _list_images(path, image_extension, filename_includes, filename_excludes)
 
     if not images:
         raise Exception('No images found')
 
-    if single_group:
-        name = create_name(path.rstrip('/').split('/')[-1], group_name_remove)
-        libraries = {
-            name: images,
-        }
-    else:
-        libraries = group_images(path, images, group_name_remove)
-
-    return libraries
+    return group_images(path, images, group_name_remove)
 
 
 def _list_images(dir_path: str, ext: str, name_includes: List[str], name_excludes: List[str]) -> List[str]:

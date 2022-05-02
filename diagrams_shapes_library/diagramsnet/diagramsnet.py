@@ -4,15 +4,12 @@ import os
 import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 from typing import Tuple, List, Dict, Any
-from urllib.parse import urljoin, quote
 
-from diagrams_shapes_library.common.images_finder import get_image_groups
 from diagrams_shapes_library.common.magnets import create_magnets
 from diagrams_shapes_library.common.name import create_name
 from diagrams_shapes_library.common.size import get_svg_size, calc_new_size
 from diagrams_shapes_library.processor import Processor, ProcessorConfig
 from diagrams_shapes_library.util.encoding import text_to_base64, deflate_raw
-from diagrams_shapes_library.util.io import create_output_dir
 from diagrams_shapes_library.util.logger import get_logger
 
 logger = get_logger(__name__)
@@ -21,7 +18,6 @@ diagrams_net_base_url = 'https://app.diagrams.net/?splash=0&clibs='
 
 
 class DiagramsNetConfig(ProcessorConfig):
-    single_library: bool = None
     labels = None
     base_url = None
 
@@ -29,16 +25,14 @@ class DiagramsNetConfig(ProcessorConfig):
 class DiagramsNet(Processor):
     _conf: DiagramsNetConfig = None
 
+    _library = []
+
     @staticmethod
     def add_subcommand(subparsers) -> ArgumentParser:
         parser: ArgumentParser = subparsers.add_parser('diagrams.net', help='Shapes library for diagrams.net')
 
-        parser.add_argument('--single-library', action='store_true', dest='single_library',
-                            help='create single output library')
         parser.add_argument('--labels', action='store_true', dest='labels',
                             help='add label with name to images')
-        parser.add_argument('--base-url', metavar='URL',
-                            help='base URL to generate link(s) to open libraries in diagrams.net')
 
         return parser
 
@@ -51,13 +45,11 @@ class DiagramsNet(Processor):
 
         super().process()
 
-        if self._conf.base_url:
-            self._generate_links(self._libraries)
+        self._write_library()
 
     def process_group(self, library_name: str, library_images: List[str]):
         super().process_group(library_name, library_images)
 
-        library = []
         for image in library_images:
             logger.debug(f'Processing file {image}')
 
@@ -65,16 +57,9 @@ class DiagramsNet(Processor):
                 svg = file.read()
             title = create_name(os.path.splitext(os.path.basename(image))[0], self._conf.image_name_remove)
 
-            library.append(
+            self._library.append(
                 self._create_image_params(svg, title)
             )
-
-        library_json = json.dumps(library)
-        library_xml = self._create_library_xml(library_json)
-
-        library_file = os.path.join(self._conf.output, library_name + '.xml')
-        with open(library_file, 'w') as file:
-            file.write(library_xml)
 
     def _create_image_params(self, svg: str, title: str) -> dict:
         points = create_magnets(self._conf.vertex_magnets, self._conf.side_magnets)
@@ -156,19 +141,10 @@ class DiagramsNet(Processor):
         library.text = data
         return ET.tostring(library, encoding='unicode', method='xml')
 
-    def _generate_links(self, libraries):
-        data = ''
-        library_names = list(libraries.keys())
-        library_names.sort()
-        library_urls = ['U' + urljoin(self._conf.base_url, quote(lib + '.xml')) for lib in library_names]
+    def _write_library(self):
+        library_json = json.dumps(self._library)
+        library_xml = self._create_library_xml(library_json)
 
-        if len(library_urls) > 1:
-            all_url = diagrams_net_base_url + ';'.join(library_urls)
-            data += f'All:\n{all_url}\n\n'
-
-        for i in range(len(library_names)):
-            data += library_names[i] + ':\n'
-            data += diagrams_net_base_url + library_urls[i] + '\n\n'
-
-        with open(os.path.join(self._conf.output, 'links.txt'), 'w') as file:
-            file.write(data)
+        library_file = os.path.join(self._conf.output, 'output.xml')
+        with open(library_file, 'w') as file:
+            file.write(library_xml)

@@ -68,8 +68,7 @@ class Processor(metaclass=ABCMeta):
     def process(self):
         self._create_dirs()
 
-        self._libraries = get_image_groups(self._conf.path, self._conf.filename_includes, self._conf.filename_excludes,
-                                           False, self._conf.library_name_remove)
+        self._libraries = get_image_groups(self._conf.path, self._conf.filename_includes, self._conf.filename_excludes, self._conf.library_name_remove)
 
         total_images_count = sum(len(images) for images in self._libraries.values())
 
