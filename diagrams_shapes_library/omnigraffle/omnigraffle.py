@@ -17,8 +17,6 @@ data_template_file = os.path.join(templates_dir, 'data.plist')
 sheet_template_file = os.path.join(templates_dir, 'sheet.plist')
 image_template_file = os.path.join(templates_dir, 'image.plist')
 
-stencil_file_name = 'output.gstencil'
-
 
 class OmniGraffleConfig(ProcessorConfig):
     text_output: bool = None
@@ -47,11 +45,13 @@ class OmniGraffle(Processor):
         self._data_pl = self._create_data_plist()
         self._image_pl_tpl = self._load_image_plist_template()
 
-        self._stencil_path = os.path.join(self._conf.output, stencil_file_name)
+        self._stencil_path = os.path.join(self._conf.output, f'{self._library_name}.gstencil')
 
         super().process()
 
         self._save_data_plist()
+
+        logger.info(f'Created {self._stencil_path}')
 
     def _create_data_plist(self) -> Dict[str, Any]:
         return self._load_plist(data_template_file)

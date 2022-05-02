@@ -4,6 +4,7 @@ from typing import Dict, Any, List
 
 from diagrams_shapes_library.arguments import allowed_size_types, default_name_remove
 from diagrams_shapes_library.common.images_finder import get_image_groups
+from diagrams_shapes_library.common.name import create_name
 from diagrams_shapes_library.util.io import create_output_dir
 from diagrams_shapes_library.util.logger import get_logger
 
@@ -34,6 +35,8 @@ class Processor(metaclass=ABCMeta):
     def __init__(self, **kwargs):
         self._conf = self._create_config(kwargs)
         self._validate_config()
+
+        self._library_name = create_name(self._conf.path.rstrip('/').split('/')[-1], self._conf.library_name_remove)
 
     @staticmethod
     @abstractmethod
@@ -70,12 +73,8 @@ class Processor(metaclass=ABCMeta):
 
         self._libraries = get_image_groups(self._conf.path, self._conf.filename_includes, self._conf.filename_excludes, self._conf.library_name_remove)
 
-        total_images_count = sum(len(images) for images in self._libraries.values())
-
         for library_name, library_images in self._libraries.items():
             self.process_group(library_name, library_images)
-
-        logger.info(f'Created {len(self._libraries)} library files with {total_images_count} elements')
 
     def _create_dirs(self):
         create_output_dir(self._conf.output)

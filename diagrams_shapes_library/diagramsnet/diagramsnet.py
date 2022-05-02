@@ -145,6 +145,7 @@ class DiagramsNet(Processor):
         library_json = json.dumps(self._library)
         library_xml = self._create_library_xml(library_json)
 
-        library_file = os.path.join(self._conf.output, 'output.xml')
+        library_file = os.path.join(self._conf.output, f'{self._library_name}.xml')
         with open(library_file, 'w') as file:
             file.write(library_xml)
+        logger.info(f'Created {library_file}')
