@@ -1,7 +1,7 @@
 import logging
 
-from diagrams_shapes_library.processor import InvalidArgument
 from diagrams_shapes_library.arguments import create_arg_parser
+from diagrams_shapes_library.common.invalid_argument import InvalidArgument
 from diagrams_shapes_library.diagramsnet.diagramsnet import DiagramsNet
 from diagrams_shapes_library.omnigraffle.omnigraffle import OmniGraffle
 from diagrams_shapes_library.util.logger import setup_logging, get_logger

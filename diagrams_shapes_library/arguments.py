@@ -2,7 +2,6 @@ from argparse import ArgumentParser, ONE_OR_MORE
 from typing import List
 
 default_name_remove = ['.', '-', '_']
-allowed_size_types = ['width', 'height', 'longest']
 
 
 def create_arg_parser(processors: List) -> ArgumentParser:
@@ -12,8 +11,6 @@ def create_arg_parser(processors: List) -> ArgumentParser:
     parser.add_argument('--path', metavar='PATH', help='input files directory path', required=True)
     parser.add_argument('--output', metavar='PATH', default='./library',
                         help='output directory path (default: ./library)')
-    parser.add_argument('--size', metavar='TYPE=VALUE', type=str,
-                        help='resize images to target size; allowed TYPE values: ' + ', '.join(allowed_size_types))
     parser.add_argument('--filename-includes', metavar='VALUE', default=[], action='extend', nargs=ONE_OR_MORE,
                         help='strings to filter image file name by, taking only those which contains them all')
     parser.add_argument('--filename-excludes', metavar='VALUE', default=[], action='extend', nargs=ONE_OR_MORE,

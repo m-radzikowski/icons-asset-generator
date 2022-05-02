@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 from typing import Tuple, List, Dict, Any
 
+from diagrams_shapes_library.common.invalid_argument import InvalidArgument
 from diagrams_shapes_library.common.magnets import create_magnets
 from diagrams_shapes_library.common.name import create_name
 from diagrams_shapes_library.common.size import get_svg_size, calc_new_size
@@ -14,12 +15,12 @@ from diagrams_shapes_library.util.logger import get_logger
 
 logger = get_logger(__name__)
 
-diagrams_net_base_url = 'https://app.diagrams.net/?splash=0&clibs='
+allowed_size_types = ['width', 'height', 'longest']
 
 
 class DiagramsNetConfig(ProcessorConfig):
     labels = None
-    base_url = None
+    size = None
 
 
 class DiagramsNet(Processor):
@@ -31,6 +32,8 @@ class DiagramsNet(Processor):
     def add_subcommand(subparsers) -> ArgumentParser:
         parser: ArgumentParser = subparsers.add_parser('diagrams.net', help='Shapes library for diagrams.net')
 
+        parser.add_argument('--size', metavar='TYPE=VALUE', type=str,
+                            help='resize images to target size; allowed TYPE values: ' + ', '.join(allowed_size_types))
         parser.add_argument('--labels', action='store_true', dest='labels',
                             help='add label with name to images')
 
@@ -39,6 +42,24 @@ class DiagramsNet(Processor):
     @staticmethod
     def _create_config(config: Dict[str, Any]) -> DiagramsNetConfig:
         return DiagramsNetConfig(config)
+
+    def _validate_config(self):
+        super()._validate_config()
+
+        if self._conf.size:
+            if self._conf.size.find('=') == -1:
+                raise InvalidArgument('Size must be in format TYPE=VALUE')
+
+            [size_type, size_value] = self._conf.size.split('=')
+            if size_type not in allowed_size_types:
+                raise InvalidArgument('Size type must be one of: ' + ', '.join(allowed_size_types))
+
+            try:
+                size_value = int(size_value)
+            except ValueError:
+                raise InvalidArgument('Size value must be an integer value')
+
+            self._conf.size = (size_type, size_value)
 
     def process(self):
         logger.info('Creating Diagrams.net library')
