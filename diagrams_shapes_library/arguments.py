@@ -7,7 +7,7 @@ default_name_remove = ['.', '-', '_']
 def create_arg_parser(processors: List) -> ArgumentParser:
     default_name_remove_help = ' '.join(default_name_remove)
 
-    parser = ArgumentParser(description='Convert images into application libraries.')
+    parser = ArgumentParser(description='Convert images into icons asset.')
     parser.add_argument('--path', metavar='PATH', help='input files directory path', required=True)
     parser.add_argument('--output', metavar='PATH', default='./library',
                         help='output directory path (default: ./library)')
