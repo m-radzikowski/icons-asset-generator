@@ -22,4 +22,4 @@ def encode_uri_component(data: str) -> str:
 
 
 def text_to_base64(data: str) -> str:
-    return base64.standard_b64encode(data.encode('ascii')).decode('ascii')
+    return base64.standard_b64encode(data.encode('utf8')).decode('utf8')
