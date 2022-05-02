@@ -19,8 +19,9 @@ def get_image_groups(path: str, filename_includes: List[str], filename_excludes:
         raise Exception('No images found')
 
     if single_group:
+        name = create_name(path.rstrip('/').split('/')[-1], group_name_remove)
         libraries = {
-            path.rstrip('/').split('/')[-1]: images
+            name: images,
         }
     else:
         libraries = group_images(path, images, group_name_remove)
