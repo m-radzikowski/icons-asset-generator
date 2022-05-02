@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ONE_OR_MORE
 from typing import List
 
 default_name_remove = ['.', '-', '_']
@@ -14,16 +14,17 @@ def create_arg_parser(processors: List) -> ArgumentParser:
                         help='output directory path (default: ./library)')
     parser.add_argument('--size', metavar='TYPE=VALUE', type=str,
                         help='resize images to target size; allowed TYPE values: ' + ', '.join(allowed_size_types))
-    parser.add_argument('--filename-includes', metavar='VALUE', default=[], action='extend', nargs='+',
+    parser.add_argument('--filename-includes', metavar='VALUE', default=[], action='extend', nargs=ONE_OR_MORE,
                         help='strings to filter image file name by, taking only those which contains them all')
-    parser.add_argument('--filename-excludes', metavar='VALUE', default=[], action='extend', nargs='+',
+    parser.add_argument('--filename-excludes', metavar='VALUE', default=[], action='extend', nargs=ONE_OR_MORE,
                         help='strings to filter image file name by, taking only those which do not contain any of them')
-    parser.add_argument('--image-name-remove', metavar='VALUE', default=[], action='extend', nargs='+',
+    parser.add_argument('--image-name-remove', metavar='VALUE', default=[], action='extend', nargs=ONE_OR_MORE,
                         help='strings to be removed from image file name ' +
                              f'(default: {default_name_remove_help})')
-    parser.add_argument('--library-name-remove', metavar='VALUE', default=[], action='extend', nargs='+',
+    parser.add_argument('--library-name-remove', metavar='VALUE', default=[], action='extend', nargs=ONE_OR_MORE,
                         help='strings to be removed from library file name ' +
                              f'(default: {default_name_remove_help})')
+    parser.add_argument('-v', action='store_true', help='enable verbose logs')
 
     subparsers = parser.add_subparsers(title='target format', metavar='TARGET', required=True)
 

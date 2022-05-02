@@ -75,9 +75,12 @@ class DiagramsNet(Processor):
 
         library = []
         for image in library_images:
+            logger.debug(f'Processing file {image}')
+
             with open(image) as file:
                 svg = file.read()
             title = create_name(os.path.splitext(os.path.basename(image))[0], self._conf.image_name_remove)
+
             library.append(
                 self._create_image_params(svg, title)
             )
