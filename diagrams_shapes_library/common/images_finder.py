@@ -20,7 +20,7 @@ def get_image_groups(path: str, filename_includes: List[str], filename_excludes:
 
     if single_group:
         libraries = {
-            path.split('/')[-1]: images
+            path.rstrip('/').split('/')[-1]: images
         }
     else:
         libraries = group_images(path, images, group_name_remove)
