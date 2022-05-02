@@ -22,8 +22,6 @@ diagrams_net_base_url = 'https://app.diagrams.net/?splash=0&clibs='
 
 class DiagramsNetConfig(ProcessorConfig):
     single_library: bool = None
-    vertex_magnets = None
-    side_magnets = None
     labels = None
     base_url = None
 
@@ -37,10 +35,6 @@ class DiagramsNet(Processor):
 
         parser.add_argument('--single-library', action='store_true', dest='single_library',
                             help='create single output library')
-        parser.add_argument('--no-vertex-magnets', action='store_false', dest='vertex_magnets',
-                            help='don\'t create connection points on vertices (corners)')
-        parser.add_argument('--side-magnets', metavar='COUNT', default=5, type=int,
-                            help='number of connection points for each side (default: 5)')
         parser.add_argument('--labels', action='store_true', dest='labels',
                             help='add label with name to images')
         parser.add_argument('--base-url', metavar='URL',
@@ -61,7 +55,7 @@ class DiagramsNet(Processor):
             self._generate_links(self._libraries)
 
     def process_group(self, library_name: str, library_images: List[str]):
-        logger.info(f'Processing {len(library_images)} images from group "{library_name}"')
+        super().process_group(library_name, library_images)
 
         library = []
         for image in library_images:

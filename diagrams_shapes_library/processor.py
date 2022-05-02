@@ -18,6 +18,8 @@ class ProcessorConfig:
     filename_excludes = None
     image_name_remove = None
     library_name_remove = None
+    vertex_magnets = None
+    side_magnets = None
 
     def __init__(self, dictionary):
         for k, v in dictionary.items():
@@ -64,7 +66,7 @@ class Processor(metaclass=ABCMeta):
             else self._conf.library_name_remove
 
     def process(self):
-        create_output_dir(self._conf.output)
+        self._create_dirs()
 
         self._libraries = get_image_groups(self._conf.path, self._conf.filename_includes, self._conf.filename_excludes,
                                            False, self._conf.library_name_remove)
@@ -76,9 +78,12 @@ class Processor(metaclass=ABCMeta):
 
         logger.info(f'Created {len(self._libraries)} library files with {total_images_count} elements')
 
+    def _create_dirs(self):
+        create_output_dir(self._conf.output)
+
     @abstractmethod
     def process_group(self, library_name: str, library_images: List[str]):
-        pass
+        logger.info(f'Processing {len(library_images)} images from group "{library_name}"')
 
 
 class InvalidArgument(Exception):

@@ -24,6 +24,10 @@ def create_arg_parser(processors: List) -> ArgumentParser:
     parser.add_argument('--library-name-remove', metavar='VALUE', default=[], action='extend', nargs=ONE_OR_MORE,
                         help='strings to be removed from library file name ' +
                              f'(default: {default_name_remove_help})')
+    parser.add_argument('--no-vertex-magnets', action='store_false', dest='vertex_magnets',
+                        help='don\'t create connection points on vertices (corners)')
+    parser.add_argument('--side-magnets', metavar='COUNT', default=5, type=int,
+                        help='number of connection points for each side (default: 5)')
     parser.add_argument('-v', action='store_true', help='enable verbose logs')
 
     subparsers = parser.add_subparsers(title='target format', metavar='TARGET', required=True)
