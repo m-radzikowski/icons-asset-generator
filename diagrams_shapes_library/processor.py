@@ -1,8 +1,13 @@
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from diagrams_shapes_library.arguments import allowed_size_types, default_name_remove
+from diagrams_shapes_library.common.images_finder import get_image_groups
+from diagrams_shapes_library.util.io import create_output_dir
+from diagrams_shapes_library.util.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ProcessorConfig:
@@ -21,6 +26,8 @@ class ProcessorConfig:
 
 class Processor(metaclass=ABCMeta):
     _conf: ProcessorConfig = None
+
+    _libraries: Dict[str, List[str]] = {}
 
     def __init__(self, **kwargs):
         self._conf = self._create_config(kwargs)
@@ -56,8 +63,21 @@ class Processor(metaclass=ABCMeta):
         self._conf.library_name_remove = default_name_remove if not self._conf.library_name_remove \
             else self._conf.library_name_remove
 
-    @abstractmethod
     def process(self):
+        create_output_dir(self._conf.output)
+
+        self._libraries = get_image_groups(self._conf.path, self._conf.filename_includes, self._conf.filename_excludes,
+                                           False, self._conf.library_name_remove)
+
+        total_images_count = sum(len(images) for images in self._libraries.values())
+
+        for library_name, library_images in self._libraries.items():
+            self.process_group(library_name, library_images)
+
+        logger.info(f'Created {len(self._libraries)} library files with {total_images_count} elements')
+
+    @abstractmethod
+    def process_group(self, library_name: str, library_images: List[str]):
         pass
 
 

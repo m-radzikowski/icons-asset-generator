@@ -55,22 +55,12 @@ class DiagramsNet(Processor):
     def process(self):
         logger.info('Creating Diagrams.net library')
 
-        create_output_dir(self._conf.output)
-
-        libraries = get_image_groups(self._conf.path, self._conf.filename_includes, self._conf.filename_excludes,
-                                     self._conf.single_library, self._conf.library_name_remove)
-
-        total_images_count = sum(len(images) for images in libraries.values())
-
-        for library_name, library_images in libraries.items():
-            self._process_group(library_name, library_images)
+        super().process()
 
         if self._conf.base_url:
-            self._generate_links(libraries)
+            self._generate_links(self._libraries)
 
-        logger.info(f'Created {len(libraries)} library files with {total_images_count} elements')
-
-    def _process_group(self, library_name: str, library_images: List[str]):
+    def process_group(self, library_name: str, library_images: List[str]):
         logger.info(f'Processing {len(library_images)} images from group "{library_name}"')
 
         library = []

@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 
 def get_image_groups(path: str, filename_includes: List[str], filename_excludes: List[str],
                      single_group: bool, group_name_remove: List[str],
-                     image_extension='svg'):
+                     image_extension='svg') -> Dict[str, List[str]]:
     images = _list_images(path, image_extension, filename_includes, filename_excludes)
 
     if not images:
