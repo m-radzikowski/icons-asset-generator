@@ -2,11 +2,11 @@ from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser
 from typing import Dict, Any, List
 
-from diagrams_shapes_library.arguments import default_name_remove
-from diagrams_shapes_library.common.images_finder import get_image_groups
-from diagrams_shapes_library.common.name import create_name
-from diagrams_shapes_library.util.io import create_output_dir
-from diagrams_shapes_library.util.logger import get_logger
+from icons_asset_generator.arguments import default_name_remove
+from icons_asset_generator.common.images_finder import get_image_groups
+from icons_asset_generator.common.name import create_name
+from icons_asset_generator.util.io import create_output_dir
+from icons_asset_generator.util.logger import get_logger
 
 logger = get_logger(__name__)
 

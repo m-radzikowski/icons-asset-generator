@@ -5,13 +5,13 @@ import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 from typing import Tuple, List, Dict, Any
 
-from diagrams_shapes_library.common.invalid_argument import InvalidArgument
-from diagrams_shapes_library.common.magnets import create_magnets
-from diagrams_shapes_library.common.name import create_name
-from diagrams_shapes_library.common.size import get_svg_size, calc_new_size
-from diagrams_shapes_library.processor import Processor, ProcessorConfig
-from diagrams_shapes_library.util.encoding import text_to_base64, deflate_raw
-from diagrams_shapes_library.util.logger import get_logger
+from icons_asset_generator.common.invalid_argument import InvalidArgument
+from icons_asset_generator.common.magnets import create_magnets
+from icons_asset_generator.common.name import create_name
+from icons_asset_generator.common.size import get_svg_size, calc_new_size
+from icons_asset_generator.processor import Processor, ProcessorConfig
+from icons_asset_generator.util.encoding import text_to_base64, deflate_raw
+from icons_asset_generator.util.logger import get_logger
 
 logger = get_logger(__name__)
 

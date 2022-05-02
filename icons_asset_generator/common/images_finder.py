@@ -4,8 +4,8 @@ from collections import defaultdict
 from itertools import filterfalse
 from typing import List, Dict
 
-from diagrams_shapes_library.common.name import create_name
-from diagrams_shapes_library.util.logger import get_logger
+from icons_asset_generator.common.name import create_name
+from icons_asset_generator.util.logger import get_logger
 
 logger = get_logger(__name__)
 

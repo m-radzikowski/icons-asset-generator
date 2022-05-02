@@ -1,10 +1,10 @@
 import logging
 
-from diagrams_shapes_library.arguments import create_arg_parser
-from diagrams_shapes_library.common.invalid_argument import InvalidArgument
-from diagrams_shapes_library.diagramsnet.diagramsnet import DiagramsNet
-from diagrams_shapes_library.omnigraffle.omnigraffle import OmniGraffle
-from diagrams_shapes_library.util.logger import setup_logging, get_logger
+from icons_asset_generator.arguments import create_arg_parser
+from icons_asset_generator.common.invalid_argument import InvalidArgument
+from icons_asset_generator.diagramsnet.diagramsnet import DiagramsNet
+from icons_asset_generator.omnigraffle.omnigraffle import OmniGraffle
+from icons_asset_generator.util.logger import setup_logging, get_logger
 
 
 def main():

@@ -19,18 +19,19 @@ Idea based on script from
 
 ## Usage
 
-Requires Python 3.8+.
+Requires Python 3.8+ and [Poetry](https://python-poetry.org/).
 
-Install:
+Install dependencies in virtual env:
 
 ```bash
-pip3 install icons-asset-generator
+poetry shell
+poetry install
 ```
 
 Run:
 
 ```bash
-icons-asset-generator --path ./icons-directory [<common-args>] <target-application> [<application-args>]
+poetry run icons-asset-generator --path ./icons-directory [<common-args>] <target-application> [<application-args>]
 ```
 
 where `<target-application>` is one of:
@@ -104,20 +105,3 @@ poetry run icons-asset-generator \
 Open [diagrams.net](https://app.diagrams.net/?splash=0)
 and [load created asset](https://www.diagrams.net/blog/custom-libraries)
 from the `./library` directory.
-
-## Development
-
-Requires Python 3.8+ and [Poetry](https://python-poetry.org/).
-
-Install dependencies in virtual env:
-
-```bash
-poetry shell
-poetry install
-```
-
-Run script:
-
-```bash
-poetry run icons-asset-generator
-```

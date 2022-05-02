@@ -6,9 +6,9 @@ from typing import List, Dict, Any, Tuple
 import cairosvg
 from PyPDF2 import PdfFileReader
 
-from diagrams_shapes_library.common.name import create_name
-from diagrams_shapes_library.processor import Processor, ProcessorConfig
-from diagrams_shapes_library.util.logger import get_logger
+from icons_asset_generator.common.name import create_name
+from icons_asset_generator.processor import Processor, ProcessorConfig
+from icons_asset_generator.util.logger import get_logger
 
 logger = get_logger(__name__)
 

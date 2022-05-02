@@ -2,7 +2,7 @@ from typing import Optional
 # noinspection PyPep8Naming
 from xml.etree import ElementTree as ET
 
-from diagrams_shapes_library.util.logger import get_logger
+from icons_asset_generator.util.logger import get_logger
 
 logger = get_logger(__name__)
 
