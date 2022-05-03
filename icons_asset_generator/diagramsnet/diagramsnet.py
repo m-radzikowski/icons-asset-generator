@@ -19,7 +19,6 @@ allowed_size_types = ['width', 'height', 'longest']
 
 
 class DiagramsNetConfig(ProcessorConfig):
-    labels = None
     size = None
 
 
@@ -34,8 +33,6 @@ class DiagramsNet(Processor):
 
         parser.add_argument('--size', metavar='TYPE=VALUE', type=str,
                             help='resize images to target size; allowed TYPE values: ' + ', '.join(allowed_size_types))
-        parser.add_argument('--labels', action='store_true', dest='labels',
-                            help='add label with name to images')
 
         return parser
 

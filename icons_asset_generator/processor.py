@@ -20,6 +20,7 @@ class ProcessorConfig:
     library_name_remove = None
     vertex_magnets = None
     side_magnets = None
+    labels = None
 
     def __init__(self, dictionary):
         for k, v in dictionary.items():

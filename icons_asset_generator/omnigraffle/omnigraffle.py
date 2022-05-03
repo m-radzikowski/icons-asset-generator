@@ -135,6 +135,14 @@ class OmniGraffle(Processor):
         magnets = ['{' + str(pos[0]) + ', ' + str(pos[1]) + '}' for pos in magnet_positions]
         image_pl['Magnets'] = magnets
 
+        if self._conf.labels:
+            image_pl['Wrap'] = "NO"
+            image_pl['TextRelativeArea'] = "{{0, 0.66}, {1, 1}}"
+            image_pl['Text'] = {
+                "Text": "{\\rtf1\\ansi\\ansicpg1252\\cocoartf2580\\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\fnil\\fcharset0 HelveticaNeue;}{\\colortbl;\\red255\\green255\\blue255;\\red0\green0\\blue0;}{\\*\\expandedcolortbl;;\\cssrgb\\c0\\c0\\c0;}\\paperw11900\\paperh16840\\vieww12000\\viewh15840\\viewkind0\\pard\\tx720\\tx1440\\tx2160\\tx2880\\tx3600\\tx4320\\tx5040\\tx5760\\tx6480\\tx7200\\tx7920\\tx8640\\pardirnatural\\qc\\partightenfactor0\\f0\\fs24 \\cf2 " + stencil_name + "}",
+                "TextAlongPathGlyphAnchor": "center",
+            }
+
         return image_pl
 
     @staticmethod

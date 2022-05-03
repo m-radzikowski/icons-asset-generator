@@ -25,6 +25,8 @@ def create_arg_parser(processors: List) -> ArgumentParser:
                         help='don\'t create connection points on vertices (corners)')
     parser.add_argument('--side-magnets', metavar='COUNT', default=5, type=int,
                         help='number of connection points for each side (default: 5)')
+    parser.add_argument('--labels', action='store_true', dest='labels',
+                        help='add text labels with name to icons')
     parser.add_argument('-v', action='store_true', help='enable verbose logs')
 
     subparsers = parser.add_subparsers(title='target format', metavar='TARGET', required=True)
