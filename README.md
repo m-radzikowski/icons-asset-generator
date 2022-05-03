@@ -1,18 +1,19 @@
-# Icons Asset Generator
+# Icons Asset Generator for OmniGraffle and diagrams.net
 
-Create icons pack for:
+Convert SVG images into:
 
+- [OmniGraffle](https://www.omnigroup.com/omnigraffle/) Stencil
 - [diagrams.net](https://diagrams.net/)
-  ([formerly draw.io](https://www.diagrams.net/blog/move-diagrams-net))
-- [OmniGraffle](https://www.omnigroup.com/omnigraffle/) (Stencils)
-
-from SVG images.
+  ([formerly draw.io](https://www.diagrams.net/blog/move-diagrams-net)) library
 
 Features:
 
 - parametrize connection points (magnets)
 - filter images by name
 - format icon names
+
+See [diagrams-aws-icons](https://github.com/m-radzikowski/diagrams-aws-icons)
+with generated AWS Architecture Icons library for diagrams.net.
 
 Idea based on script from
 [AWS-OmniGraffle-Stencils](https://github.com/davidfsmith/AWS-OmniGraffle-Stencils/)
@@ -24,14 +25,15 @@ Requires Python 3.8+ and [Poetry](https://python-poetry.org/).
 Install dependencies in virtual env:
 
 ```bash
-poetry shell
 poetry install
 ```
 
 Run:
 
 ```bash
-poetry run icons-asset-generator --path ./icons-directory [<common-args>] <target-application> [<application-args>]
+poetry run icons-asset-generator \
+    --path ./icons-directory [<common-args>] \
+    <target-application> [<application-args>]
 ```
 
 where `<target-application>` is one of:
@@ -49,6 +51,7 @@ where `<target-application>` is one of:
 - `--library-name-remove` - strings to be removed from library file name (default: `. - _`); accepts multiple arguments
 - `--no-vertex-magnets` - don't create connection points on vertices (corners)
 - `--side-magnets` - number of connection points for each side (default: `5`)
+- `--help` - display help
 
 All SVG files from the given `path` will be added to the output asset, recursively.
 
@@ -58,7 +61,7 @@ and parses `<target-application>` parameter correctly.
 ### Diagrams.net specific options
 
 - `--size` - resize images to target size; accepts argument in format `TYPE=NUMBER` where `TYPE` is one of `width`, `height`, `longest`
-- `--labels` - add label with name to the images (flag)
+- `--labels` - add label with name to the images
 
 ### OmniGraffle specific options
 

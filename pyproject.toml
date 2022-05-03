@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "icons-asset-generator"
 version = "0.1.0"
-description = ""
+description = "Tool to create OmniGraffle Stencils and diagrams.net libraries from SVG icons"
 authors = ["Maciej Radzikowski <maciej@radzikowski.com.pl>"]
 license = "MIT"
+repository = "https://github.com/m-radzikowski/icons-asset-generator"
 
 [tool.poetry.dependencies]
 python = "^3.8"
