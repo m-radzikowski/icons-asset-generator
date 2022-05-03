@@ -51,6 +51,7 @@ where `<target-application>` is one of:
 - `--library-name-remove` - strings to be removed from library file name (default: `. - _`); accepts multiple arguments
 - `--no-vertex-magnets` - don't create connection points on vertices (corners)
 - `--side-magnets` - number of connection points for each side (default: `5`)
+- `--labels` - add label with name to the images
 - `--help` - display help
 
 All SVG files from the given `path` will be added to the output asset, recursively.
@@ -61,7 +62,6 @@ and parses `<target-application>` parameter correctly.
 ### Diagrams.net specific options
 
 - `--size` - resize images to target size; accepts argument in format `TYPE=NUMBER` where `TYPE` is one of `width`, `height`, `longest`
-- `--labels` - add label with name to the images
 
 ### OmniGraffle specific options
 
