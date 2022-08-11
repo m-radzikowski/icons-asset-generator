@@ -97,11 +97,11 @@ Run:
 
 ```bash
 poetry run icons-asset-generator \
-    --path "./Asset-Package_04302022" \
     --filename-includes _48 \
     --filename-excludes Dark \
     --image-name-remove Light Arch_ Res_ _48 . - _  \
     --library-name-remove  . - _ \
+    --path "./Asset-Package_04302022" \
     diagrams.net
 ```
 
